@@ -18,7 +18,7 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
         title: const Text(
-          'Mon VPN',
+          'MARC VPN',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.transparent,

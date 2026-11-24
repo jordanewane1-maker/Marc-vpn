@@ -33,7 +33,7 @@ class VpnApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mon VPN',
+      title: 'MARC VPN',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
       theme: ThemeData.dark().copyWith(

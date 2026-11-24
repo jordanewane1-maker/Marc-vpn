@@ -247,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Mon VPN v1.0.0',
+                      'MARC VPN v1.0.0',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
