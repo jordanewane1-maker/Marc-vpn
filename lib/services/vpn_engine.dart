@@ -8,8 +8,10 @@ import 'subscription_service.dart';
 enum VpnState { disconnected, connecting, connected, error }
 
 class VpnEngine extends ChangeNotifier {
-  final FlutterV2ray _flutterV2ray = FlutterV2ray();
+  late final FlutterV2ray _flutterV2ray;
   final SubscriptionService _subService = SubscriptionService();
+  final ValueNotifier<V2RayStatus> _v2rayStatus =
+      ValueNotifier<V2RayStatus>(V2RayStatus());
 
   VpnState _state = VpnState.disconnected;
   UserQuota _quota = UserQuota.empty();
@@ -21,6 +23,14 @@ class VpnEngine extends ChangeNotifier {
   String? _subscriptionUrl;
   bool _isLoading = false;
   String? _errorMessage;
+
+  VpnEngine() {
+    _flutterV2ray = FlutterV2ray(
+      onStatusChanged: (status) {
+        _v2rayStatus.value = status;
+      },
+    );
+  }
 
   VpnState get state => _state;
   UserQuota get quota => _quota;
@@ -35,7 +45,7 @@ class VpnEngine extends ChangeNotifier {
   Future<void> init() async {
     try {
       await _flutterV2ray.initializeV2Ray();
-      _flutterV2ray.v2rayStatus.addListener(_onV2rayStatusChanged);
+      _v2rayStatus.addListener(_onV2rayStatusChanged);
     } catch (e) {
       debugPrint('Initialisation V2Ray error: $e');
     }
@@ -47,9 +57,9 @@ class VpnEngine extends ChangeNotifier {
   }
 
   void _onV2rayStatusChanged() {
-    final status = _flutterV2ray.v2rayStatus.value;
-    _uploadSpeed = status.uploadSpeed;
-    _downloadSpeed = status.downloadSpeed;
+    final status = _v2rayStatus.value;
+    _uploadSpeed = _formatSpeed(status.uploadSpeed);
+    _downloadSpeed = _formatSpeed(status.downloadSpeed);
 
     switch (status.state) {
       case 'CONNECTED':
@@ -64,6 +74,14 @@ class VpnEngine extends ChangeNotifier {
         break;
     }
     notifyListeners();
+  }
+
+  static String _formatSpeed(int bytesPerSecond) {
+    if (bytesPerSecond <= 0) return '0 KB/s';
+    if (bytesPerSecond < 1024 * 1024) {
+      return '${(bytesPerSecond / 1024).toStringAsFixed(1)} KB/s';
+    }
+    return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(1)} MB/s';
   }
 
   void selectConfig(VpnConfig config) {
@@ -126,7 +144,7 @@ class VpnEngine extends ChangeNotifier {
 
     try {
       if (await _flutterV2ray.requestPermission()) {
-        final v2rayURL = _flutterV2ray.parseV2rayURL(_selectedConfig!.rawUrl);
+        final v2rayURL = FlutterV2ray.parseFromURL(_selectedConfig!.rawUrl);
         await _flutterV2ray.startV2Ray(
           remark: _selectedConfig!.name,
           config: v2rayURL.getFullConfiguration(),
@@ -160,7 +178,8 @@ class VpnEngine extends ChangeNotifier {
 
   @override
   void dispose() {
-    _flutterV2ray.v2rayStatus.removeListener(_onV2rayStatusChanged);
+    _v2rayStatus.removeListener(_onV2rayStatusChanged);
+    _v2rayStatus.dispose();
     super.dispose();
   }
 }
